@@ -8,8 +8,10 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .permissons import IsAdminOrReadOnly, IsOwnerOrReadOnly
 from .serializers import WomenSerializer
 from .models import Women, Category
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAdminUser
 
 
 # Create your views here.
@@ -48,33 +50,20 @@ def get_data(request, text):
     return HttpResponse(context.get(text, "Kechirasiz bunaqa ma'lumot mavjud emas"))
 
 
-# class WomenAPIList(generics.ListCreateAPIView):
-#     queryset = Women.objects.all()
-#     serializer_class = WomenSerializer
-#
-#
-# class WomenAPIUpdate(generics.UpdateAPIView):
-#     queryset = Women.objects.all()
-#     serializer_class = WomenSerializer
-#
-# class WomenAPIDetailView(generics.RetrieveUpdateDestroyAPIView):
-#     queryset = Women.objects.all()
-#     serializer_class = WomenSerializer
 
-
-class WomenViewSet(viewsets.ModelViewSet):
-    # queryset = Women.objects.all()
+class WomenAPIList(generics.ListCreateAPIView):
+    queryset = Women.objects.all()
     serializer_class = WomenSerializer
+    permission_classes = (IsAdminOrReadOnly,)
 
-    def get_queryset(self):
-        pk = self.kwargs.get('pk')
+class WomenAPIUpdate(generics.RetrieveUpdateAPIView):
+    queryset = Women.objects.all()
+    serializer_class = WomenSerializer
+    permission_classes = (IsOwnerOrReadOnly, )
 
-        if not pk:
-            return Women.objects.all()[:3]
-        return Women.objects.filter(pk=pk)
 
-    
-    @action(methods = ['get'], detail=True)
-    def category(self, request, pk=None):
-        cats = Category.objects.get(pk=pk)
-        return Response({'cats': cats.name})
+
+class WomenAPIDestroy(generics.RetrieveDestroyAPIView):
+    queryset = Women.objects.all()
+    serializer_class = WomenSerializer
+    permission_classes = (IsAdminOrReadOnly,)
