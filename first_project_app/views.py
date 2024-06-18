@@ -1,12 +1,15 @@
-from django.forms import model_to_dict
+from venv import logger
+
+from django.forms.models import model_to_dict
 from django.shortcuts import render
 from django.http import HttpResponse
-from rest_framework import generics
+from rest_framework import generics, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .serializers import WomenSerializer
-from .models import Women
+from .models import Women, Category
 
 
 # Create your views here.
@@ -45,20 +48,33 @@ def get_data(request, text):
     return HttpResponse(context.get(text, "Kechirasiz bunaqa ma'lumot mavjud emas"))
 
 
-class WomenAPIView(APIView):
-
-    def get(self, request):
-        lst = Women.objects.all().values()
-        return Response({'posts': list(lst)})
-
-    def post(self, request):
-        post_new = Women.objects.create(
-            title = request.data['title'],
-            content = request.data['content'],
-            cat_id = request.data['cat_id']
-        )
-        return Response({'post', model_to_dict(post_new)})
-
-# class WomenAPIView(generics.ListAPIView):
+# class WomenAPIList(generics.ListCreateAPIView):
 #     queryset = Women.objects.all()
 #     serializer_class = WomenSerializer
+#
+#
+# class WomenAPIUpdate(generics.UpdateAPIView):
+#     queryset = Women.objects.all()
+#     serializer_class = WomenSerializer
+#
+# class WomenAPIDetailView(generics.RetrieveUpdateDestroyAPIView):
+#     queryset = Women.objects.all()
+#     serializer_class = WomenSerializer
+
+
+class WomenViewSet(viewsets.ModelViewSet):
+    # queryset = Women.objects.all()
+    serializer_class = WomenSerializer
+
+    def get_queryset(self):
+        pk = self.kwargs.get('pk')
+
+        if not pk:
+            return Women.objects.all()[:3]
+        return Women.objects.filter(pk=pk)
+
+    
+    @action(methods = ['get'], detail=True)
+    def category(self, request, pk=None):
+        cats = Category.objects.get(pk=pk)
+        return Response({'cats': cats.name})
